@@ -1,0 +1,20 @@
+@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700;800;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;700;800;900&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --color-green-main: #65CE00;
+  --color-green-secondary: #2F5F00;
+  --color-secondary-main: #A28AE8;
+  --color-faded-gray: #1F2227;
+
+  --font-roboto: "Roboto", sans-serif;
+  --font-poppins: "Poppins", sans-serif;
+}
+
+.table-wrapper {
+  transform: none !important;
+  perspective: none !important;
+  backface-visibility: hidden;
+}
+
