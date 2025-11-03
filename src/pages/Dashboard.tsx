@@ -3,12 +3,16 @@ import { useNavigate } from "react-router-dom";
 import { toast } from "react-hot-toast";
 import { apiRequest } from "../utils/api";
 import {
-  bell, logo, userLogin, booked, completed, pending, cancelled, revenue,
-  
+  bell,
+  logo,
+  userLogin,
+  booked,
+  completed,
+  pending,
+  cancelled,
+  revenue,
 } from "../assets";
 import Search from "../components/Search";
-// import DashboardCards from "../components/DashboardCards";
-// import BookingsTable from "../components/BookingsTable";
 import AssignRiderModal from "../components/AssignRiderModal";
 import DashboardCards from "../components/DashboardCards";
 import BookingsTable from "../components/BookingsTable";
@@ -24,30 +28,32 @@ const Dashboard: React.FC = () => {
   const [isSearching, setIsSearching] = useState(false);
   const [assignModalOpen, setAssignModalOpen] = useState(false);
   const [selectedBookingForAssign, setSelectedBookingForAssign] = useState<string | null>(null);
-
   const [loadingBookingId, setLoadingBookingId] = useState<string | null>(null);
+  const [loadingPaymentId, setLoadingPaymentId] = useState<string | null>(null);
 
-  // --- Fetch dashboard data ---
-  useEffect(() => {
-    const fetchDashboardData = async () => {
-      try {
-        const statsRes = await apiRequest("/admin_dashboard/get_record", "POST");
-        const bookingsRes = await apiRequest("/admin_dashboard/get_recent", "POST", { limit: 10 });
+  // ✅ Function to fetch dashboard data
+  const fetchDashboardData = async () => {
+    try {
+      setLoading(true);
+      const statsRes = await apiRequest("/admin_dashboard/get_record", "POST");
+      const bookingsRes = await apiRequest("/admin_dashboard/get_recent", "POST", { limit: 10 });
 
-        if (statsRes.success && bookingsRes.success) {
-          setStats(statsRes);
-          setRecentBookings(bookingsRes.data);
-        } else {
-          toast.error("Failed to load dashboard data");
-        }
-      } catch (err) {
-        console.error(err);
-        toast.error("Error fetching dashboard data");
-      } finally {
-        setLoading(false);
+      if (statsRes.success && bookingsRes.success) {
+        setStats(statsRes);
+        setRecentBookings(bookingsRes.data);
+      } else {
+        toast.error("Failed to load dashboard data");
       }
-    };
+    } catch (err) {
+      console.error(err);
+      toast.error("Error fetching dashboard data");
+    } finally {
+      setLoading(false);
+    }
+  };
 
+  // 🌀 Initial load
+  useEffect(() => {
     fetchDashboardData();
   }, []);
 
@@ -58,9 +64,6 @@ const Dashboard: React.FC = () => {
     total_cancelled_bookings: cancelled,
     total_revenue: revenue,
   };
-
-
-
 
   // --- Handlers ---
   const handlePriceSubmit = async (bookingId: string, value: string) => {
@@ -92,16 +95,22 @@ const Dashboard: React.FC = () => {
 
   const togglePaymentStatus = async (bookingId: string, status: "paid" | "unpaid") => {
     try {
+      setLoadingPaymentId(bookingId);
       const res = await apiRequest("/admin_dashboard/toggle_payment_status", "POST", { bookingId, status });
+
       if (res.success) {
         toast.success(res.message || "Payment status updated");
         setRecentBookings((prev) =>
           prev.map((b) => (b._id === bookingId ? { ...b, paymentStatus: status } : b))
         );
-      } else toast.error(res.message || "Failed to update payment status");
+      } else {
+        toast.error(res.message || "Failed to update payment status");
+      }
     } catch (err) {
       console.error(err);
       toast.error("Error updating payment status");
+    } finally {
+      setLoadingPaymentId(null);
     }
   };
 
@@ -136,7 +145,9 @@ const Dashboard: React.FC = () => {
         value={searchQuery}
         onChange={(val) => setSearchQuery(val)}
         onFocus={() => setIsSearching(true)}
-        onBlur={() => { if (searchQuery.trim() === "") setIsSearching(false); }}
+        onBlur={() => {
+          if (searchQuery.trim() === "") setIsSearching(false);
+        }}
       />
 
       {/* Cards */}
@@ -156,16 +167,24 @@ const Dashboard: React.FC = () => {
             .includes(searchQuery.toLowerCase())
         )}
         loadingBookingId={loadingBookingId}
+        loadingPaymentId={loadingPaymentId}
         handlePriceSubmit={handlePriceSubmit}
         togglePaymentStatus={togglePaymentStatus}
-        openAssignModal={(id: string) => { setSelectedBookingForAssign(id); setAssignModalOpen(true); }}
+        openAssignModal={(id: string) => {
+          setSelectedBookingForAssign(id);
+          setAssignModalOpen(true);
+        }}
+        refreshBookings={fetchDashboardData} // ✅ now properly passed
       />
 
       {/* Modal */}
       <AssignRiderModal
         isOpen={assignModalOpen}
-        onClose={() => { setAssignModalOpen(false); setSelectedBookingForAssign(null); }}
-        bookingId={selectedBookingForAssign || ''}
+        onClose={() => {
+          setAssignModalOpen(false);
+          setSelectedBookingForAssign(null);
+        }}
+        bookingId={selectedBookingForAssign || ""}
         onAssigned={onRiderAssigned}
       />
     </div>
